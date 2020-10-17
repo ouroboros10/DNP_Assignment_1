@@ -1,0 +1,37 @@
+﻿@inherits LayoutComponentBase
+
+@using DNP_Assignment_1.Pages
+@using System.Security.Claims
+
+<div class="sidebar">
+    <NavMenu/>
+</div>
+
+<div class="main">
+    <div class="top-row px-4">
+        <LoginComponent/>
+        <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+    </div>
+
+    <div class="content px-4">
+        @Body
+    </div>
+</div>
+
+@code
+{
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+    
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        //ClaimsPrincipal user = new ClaimsPrincipal();
+        var user = (await AuthStat).User;
+        if(!user.Identity.IsAuthenticated)
+        {
+    //        NavigationManager.NavigateTo($"/Login");
+    // NavigationManager.NavigateTo($"/Login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}");
+        }
+    }
+
+}

@@ -1,0 +1,372 @@
+﻿@page "/Adults"
+@using DNP_Assignment_1.Data
+@using global::Models
+@inject IAdultService AdultService;
+
+<h3>List of Adults</h3>
+
+<p>
+    Filter by User input: <input type="text" @oninput="@((arg) => ExecuteFilter(arg))" style="width:200px"/>
+</p>
+
+<p>
+    Filter by:
+
+    <div class="form-group">
+        <select @bind="Selection" style="width:200px">
+            <option>Id</option>
+            <option>First name</option>
+            <option>Last name</option>
+            <option>Hair color</option>
+            <option>Eye color</option>
+            <option>Age</option>
+            <option>Weight</option>
+            <option>Height</option>
+            <option>Sex</option>
+        </select>
+    </div>
+
+
+</p>
+
+
+@if (adultsToShow == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else if (!adultsToShow.Any())
+{
+    <p>
+        <em>No adults like this exist.</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>User ID</th>
+            <th>Jobtitle</th>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Hair Color</th>
+            <th>Eye color</th>
+            <th>Age</th>
+            <th>Weight</th>
+            <th>Height</th>
+            <th>Sex</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (Adult adult in adultsToShow)
+        {
+            if (adult.IsEditing)
+            {
+                <tr>
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.FirstName" @bind="@adult.FirstName"/>
+                    </td>
+
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.LastName" @bind="@adult.LastName"/>
+                    </td>
+
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.HairColor" @bind="@adult.HairColor"/>
+                    </td>
+
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.EyeColor" @bind="@adult.EyeColor"/>
+                    </td>
+
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.Age" @bind="@adult.Age"/>
+                    </td>
+
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.Weight" @bind="@adult.Weight"/>
+                    </td>
+
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.Height" @bind="@adult.Height"/>
+                    </td>
+
+                    <td>
+                        <input type="text" class="form-control" placeholder="@adult.Sex" @bind="@adult.Sex"/>
+                    </td>
+
+                    <td>
+                        <button @onclick="@(() => initiateEdit(adult.Id))">
+                            <i class="oi oi-file" style="color:blue"/>
+                        </button>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td>@adult.Id</td>
+                    <td>@adult.JobTitle</td>
+                    <td>@adult.FirstName</td>
+                    <td>@adult.LastName</td>
+                    <td>@adult.HairColor</td>
+                    <td>@adult.EyeColor</td>
+                    <td>@adult.Age</td>
+                    <td>@adult.Weight</td>
+                    <td>@adult.Height</td>
+                    <td>@adult.Sex</td>
+
+                    <AuthorizeView Policy="MustBeAdmin">
+                        <Authorized>
+                            <td>
+                                <button @onclick="@(() => EnableEditing(true, adult.Id))">
+                                    <i class="oi oi-wrench" style="color:cyan"/>
+                                </button>
+                            </td>
+
+                            <td>
+                                <button @onclick="@(() => RemoveAdult(adult.Id))">
+                                    <i class="oi oi-trash" style="color:red"/>
+                                </button>
+                            </td>
+                        </Authorized>
+                    </AuthorizeView>
+
+
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    private IList<Adult> adultsToShow;
+    private IList<Adult> allAdults;
+
+    private string Selection = "";
+    private string filterOptions;
+
+    private string updatedFirstName = "";
+    private string updatedLastname = "";
+    private string updatedHairColor;
+    private string updatedEyeColor;
+    private int updatedAge = 0;
+    private float updatedWeight;
+    private int updatedHeight;
+    private string updatedSex;
+
+
+    /*Filter by chosen input*/
+
+    private void ExecuteFilter(ChangeEventArgs changeEventArgs)
+    {
+        filterOptions = changeEventArgs.Value.ToString();
+
+        try
+        {
+            switch (Selection)
+            {
+                case "Id":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.Id == int.Parse(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "First name":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.FirstName.Contains(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "Last name":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.LastName.Contains(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "Hair color":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.HairColor.Contains(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "Eye color":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.EyeColor.Contains(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "Age":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.Age == int.Parse(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "Weight":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.Weight == float.Parse(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "Height":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.Height == int.Parse(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+
+                case "Sex":
+                    adultsToShow = allAdults.Where(t => (filterOptions != null && t.Sex.Contains(filterOptions) || string.IsNullOrEmpty(filterOptions))).ToList();
+                    break;
+            }
+        }
+        catch (FormatException e)
+        {
+            Console.WriteLine(e);
+            adultsToShow = allAdults;
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        allAdults = AdultService.getAdults();
+        adultsToShow = allAdults;
+    }
+
+    /*Remove Adult from list by id*/
+
+    private void RemoveAdult(int id)
+    {
+        Adult adultToRemove = adultsToShow.First(i => i.Id == id);
+        AdultService.removeAdult(adultToRemove);
+        adultsToShow.Remove(adultToRemove);
+
+        adultsToShow = allAdults;
+    }
+
+
+    /*Edit adult information*/
+
+    private void EnableEditing(bool flag, int id)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        adultToBeUpdated.IsEditing = flag;
+    }
+
+    private void initiateEdit(int id)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+
+        if (String.IsNullOrEmpty(adultToBeUpdated.FirstName) || !adultToBeUpdated.FirstName.Equals(updatedFirstName))
+        {
+            updatedFirstName = adultToBeUpdated.FirstName;
+            EditFirstname(id, updatedFirstName);
+        }
+
+        if (String.IsNullOrEmpty(adultToBeUpdated.LastName) || !adultToBeUpdated.LastName.Equals(updatedLastname))
+        {
+            updatedLastname = adultToBeUpdated.LastName;
+            EditLastname(id, updatedLastname);
+        }
+
+        if (String.IsNullOrEmpty(adultToBeUpdated.LastName) || String.IsNullOrEmpty(adultToBeUpdated.LastName))
+        {
+            updatedLastname = adultToBeUpdated.LastName;
+            EditHairColor(id, updatedLastname);
+        }
+
+        if (String.IsNullOrEmpty(adultToBeUpdated.HairColor) || String.IsNullOrEmpty(adultToBeUpdated.HairColor))
+        {
+            updatedHairColor = adultToBeUpdated.HairColor;
+            EditHairColor(id, updatedHairColor);
+        }
+
+        if (String.IsNullOrEmpty(adultToBeUpdated.EyeColor) || String.IsNullOrEmpty(adultToBeUpdated.EyeColor))
+        {
+            updatedEyeColor = adultToBeUpdated.EyeColor;
+            EditHairColor(id, updatedEyeColor);
+        }
+
+        if (adultToBeUpdated.Age == 0 || adultToBeUpdated.Age != updatedAge)
+        {
+            updatedAge = adultToBeUpdated.Age;
+            EditAge(id, updatedAge);
+        }
+
+        if (adultToBeUpdated.Weight == 0 || adultToBeUpdated.Weight != updatedWeight)
+        {
+            updatedWeight = adultToBeUpdated.Weight;
+            EditWeight(id, updatedWeight);
+        }
+
+        if (adultToBeUpdated.Height == 0 || adultToBeUpdated.Height != updatedHeight)
+        {
+            updatedHeight = adultToBeUpdated.Height;
+            EditHeight(id, updatedHeight);
+        }
+
+        if (String.IsNullOrEmpty(adultToBeUpdated.Sex) || String.IsNullOrEmpty(adultToBeUpdated.Sex))
+        {
+            updatedSex = adultToBeUpdated.Sex;
+            EditSex(id, updatedSex);
+        }
+
+        else
+        {
+            adultToBeUpdated.IsEditing = false;
+        }
+    }
+
+
+    /* Code for specific editing */
+
+    private void EditFirstname(int id, string firstName)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateFirstName(adultToBeUpdated, updatedFirstName);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+    private void EditLastname(int id, string lastName)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateLastName(adultToBeUpdated, updatedLastname);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+    private void EditHairColor(int id, string hairColor)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateHairColor(adultToBeUpdated, updatedHairColor);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+    private void EditEyeColor(int id, string eyeColor)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateEyeColor(adultToBeUpdated, updatedEyeColor);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+    private void EditAge(int id, int age)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateAge(adultToBeUpdated, updatedAge);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+
+    private void EditWeight(int id, float weight)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateWeight(adultToBeUpdated, updatedWeight);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+
+    private void EditHeight(int id, int height)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateHeight(adultToBeUpdated, updatedHeight);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+    private void EditSex(int id, string sex)
+    {
+        Adult adultToBeUpdated = adultsToShow.First(i => i.Id == id);
+        AdultService.updateSex(adultToBeUpdated, updatedSex);
+        adultToBeUpdated.IsEditing = false;
+    }
+
+
+
+}
